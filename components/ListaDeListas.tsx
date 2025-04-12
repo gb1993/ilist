@@ -211,7 +211,7 @@ export function ListaDeListas() {
           <DialogHeader>
             <DialogTitle>Confirmar Remoção</DialogTitle>
             <DialogDescription>
-              Tem certeza que deseja remover a lista "{listaParaRemover && getListaNome(listaParaRemover)}"?
+              Tem certeza que deseja remover a lista {listaParaRemover && getListaNome(listaParaRemover)}?
               Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
