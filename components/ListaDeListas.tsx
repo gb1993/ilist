@@ -21,6 +21,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { Trash2, Pencil } from "lucide-react";
 
 export function ListaDeListas() {
   const router = useRouter();
@@ -142,13 +143,14 @@ export function ListaDeListas() {
                 <h3 className="text-xl font-semibold">{lista.titulo}</h3>
                 <Button
                   variant="destructive"
-                  size="sm"
+                  size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
                     confirmarRemocao(lista.id);
                   }}
+                  title="Remover"
                 >
-                  Remover
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               </div>
               <p className="text-gray-500 mb-4">{lista.descricao}</p>
@@ -160,6 +162,7 @@ export function ListaDeListas() {
                 variant="outline"
                 onClick={() => abrirLista(lista.id)}
               >
+                <Pencil className="h-4 w-4 mr-2" />
                 Abrir Lista
               </Button>
             </div>

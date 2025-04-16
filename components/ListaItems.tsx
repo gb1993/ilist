@@ -21,6 +21,9 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
+import { generateShareId, getShareUrl } from "@/lib/utils";
+import { toast } from "sonner";
+import { Pencil, Trash2 } from "lucide-react";
 
 interface ListaItemsProps {
   listaId: string;
@@ -31,6 +34,8 @@ export function ListaItems({ listaId }: ListaItemsProps) {
   const [lista, setLista] = useState<Lista | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ListItem | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const form = useForm<Omit<ListItem, "id">>({
     defaultValues: {
@@ -151,6 +156,40 @@ export function ListaItems({ listaId }: ListaItemsProps) {
     router.push("/");
   };
 
+  const compartilharLista = () => {
+    if (!lista) return;
+
+    // Se ainda não tiver um shareId, gerar um
+    if (!lista.shareId) {
+      const novaLista = {
+        ...lista,
+        shareId: generateShareId()
+      };
+      salvarLista(novaLista);
+      setLista(novaLista);
+      
+      // Atualizar o URL de compartilhamento
+      const url = getShareUrl(novaLista);
+      setShareUrl(url);
+    } else {
+      // Usar o shareId existente
+      const url = getShareUrl(lista);
+      setShareUrl(url);
+    }
+    
+    setShareDialogOpen(true);
+  };
+
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copiado para a área de transferência");
+    } catch (err) {
+      toast.error("Erro ao copiar link");
+      console.error("Erro ao copiar link:", err);
+    }
+  };
+
   if (!lista) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -175,7 +214,14 @@ export function ListaItems({ listaId }: ListaItemsProps) {
           <h2 className="text-2xl font-bold">{lista.titulo}</h2>
           <p className="text-gray-500">{lista.descricao}</p>
         </div>
-        <Button onClick={adicionarItem}>Adicionar Item</Button>
+        <div className="flex gap-2">
+          {lista.itens.length > 0 && (
+            <Button variant="outline" onClick={compartilharLista}>
+              Compartilhar
+            </Button>
+          )}
+          <Button onClick={adicionarItem}>Adicionar Item</Button>
+        </div>
       </div>
 
       {lista.itens.length === 0 ? (
@@ -200,17 +246,19 @@ export function ListaItems({ listaId }: ListaItemsProps) {
               <div>{item.verEm}</div>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => editarItem(item)}
+                title="Alterar"
               >
-                Alterar
+                <Pencil className="h-4 w-4" />
               </Button>
               <Button
                 variant="destructive"
-                size="sm"
+                size="icon"
                 onClick={() => removerItem(item.id)}
+                title="Remover"
               >
-                Remover
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
@@ -275,6 +323,26 @@ export function ListaItems({ listaId }: ListaItemsProps) {
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Compartilhar Lista</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500">
+              Compartilhe este link para que outras pessoas possam importar esta lista:
+            </p>
+            <div className="flex items-center gap-2">
+              <Input value={shareUrl} readOnly className="flex-1" />
+              <Button onClick={copiarLink}>Copiar</Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Quando alguém abrir este link, a lista será criada automaticamente para eles.
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

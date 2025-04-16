@@ -10,4 +10,7 @@ export interface Lista {
   titulo: string;
   descricao: string;
   itens: ListItem[];
-} 
+  shareId?: string;
+}
+
+export type ShareableListData = Omit<Lista, "id"> & { originId: string }; 
