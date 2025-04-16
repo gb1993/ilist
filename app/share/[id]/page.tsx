@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Lista, ShareableListData } from "@/lib/types";
+import { Lista } from "@/lib/types";
 import { decodeShareData } from "@/lib/utils";
 import { toast } from "sonner";
 
