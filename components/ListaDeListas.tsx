@@ -21,7 +21,8 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Eye } from "lucide-react";
+import { listaAssistidosDeveSerVisivel, obterOuCriarListaAssistidos, LISTA_ASSISTIDOS_ID, removerTodosItensDaListaAssistidos } from "@/lib/utils";
 
 export function ListaDeListas() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export function ListaDeListas() {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [listaParaRemover, setListaParaRemover] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mostrarListaAssistidos, setMostrarListaAssistidos] = useState(false);
 
   const form = useForm<Omit<Lista, "id" | "itens">>({
     defaultValues: {
@@ -44,7 +46,11 @@ export function ListaDeListas() {
       try {
         const savedListas = localStorage.getItem("listas");
         if (savedListas) {
-          setListas(JSON.parse(savedListas));
+          const listasCarregadas = JSON.parse(savedListas) as Lista[];
+          // Verificar se deve mostrar lista de assistidos
+          setMostrarListaAssistidos(listaAssistidosDeveSerVisivel());
+          // Filtrar a lista de assistidos da exibição principal
+          setListas(listasCarregadas.filter(lista => !lista.isAssistidos));
         }
       } catch (error) {
         console.error("Erro ao carregar listas:", error);
@@ -54,11 +60,36 @@ export function ListaDeListas() {
     };
     
     carregarListas();
+    
+    // Adicionar um listener para atualizar quando o localStorage mudar
+    const handleStorageChange = () => {
+      carregarListas();
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {
     if (!isLoading) {
-      localStorage.setItem("listas", JSON.stringify(listas));
+      const savedListas = localStorage.getItem("listas");
+      if (savedListas) {
+        const todasListas = JSON.parse(savedListas) as Lista[];
+        const listaAssistidos = todasListas.find(l => l.isAssistidos);
+        
+        // Combinar as listas normais com a lista de assistidos (se existir)
+        const listasAtualizadas = [
+          ...listas,
+          ...(listaAssistidos ? [listaAssistidos] : [])
+        ];
+        
+        localStorage.setItem("listas", JSON.stringify(listasAtualizadas));
+      } else {
+        localStorage.setItem("listas", JSON.stringify(listas));
+      }
     }
   }, [listas, isLoading]);
 
@@ -77,6 +108,10 @@ export function ListaDeListas() {
 
   const removerLista = () => {
     if (listaParaRemover) {
+      // Remover itens da lista de assistidos
+      removerTodosItensDaListaAssistidos(listaParaRemover);
+      
+      // Remover a lista
       setListas(listas.filter((lista) => lista.id !== listaParaRemover));
       setListaParaRemover(null);
       setConfirmDialogOpen(false);
@@ -104,6 +139,12 @@ export function ListaDeListas() {
     router.push(`/lista/${id}`);
   };
 
+  const abrirListaAssistidos = () => {
+    // Garantir que a lista de assistidos existe
+    obterOuCriarListaAssistidos();
+    router.push(`/lista/${LISTA_ASSISTIDOS_ID}`);
+  };
+
   const getListaNome = (id: string) => {
     const lista = listas.find(l => l.id === id);
     return lista?.titulo || "esta lista";
@@ -119,11 +160,31 @@ export function ListaDeListas() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Minhas Listas</h2>
         <Button onClick={adicionarLista}>Nova Lista</Button>
       </div>
+
+      {/* Lista de Assistidos */}
+      {mostrarListaAssistidos && (
+        <div className="bg-secondary/30 rounded-lg p-6 border-2 border-secondary">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex items-center">
+              <Eye className="h-5 w-5 mr-2 text-primary" />
+              <h3 className="text-xl font-semibold">Assistidos</h3>
+            </div>
+            <Button 
+              variant="secondary"
+              onClick={abrirListaAssistidos}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Ver Todos
+            </Button>
+          </div>
+          <p className="text-gray-500">Itens que você já marcou como vistos em suas listas</p>
+        </div>
+      )}
 
       {listas.length === 0 ? (
         <div className="bg-secondary/40 rounded-lg p-8 text-center">
@@ -137,7 +198,7 @@ export function ListaDeListas() {
           {listas.map((lista) => (
             <div
               key={lista.id}
-              className="border rounded-lg p-4 hover:border-primary transition-colors"
+              className="flex flex-col justify-between border rounded-lg p-4 hover:border-primary transition-colors"
             >
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-xl font-semibold">{lista.titulo}</h3>

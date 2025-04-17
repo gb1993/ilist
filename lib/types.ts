@@ -3,6 +3,7 @@ export interface ListItem {
   visto: boolean;
   nome: string;
   verEm: string;
+  origemId?: string; // ID da lista de origem, para itens na lista de assistidos
 }
 
 export interface Lista {
@@ -11,6 +12,7 @@ export interface Lista {
   descricao: string;
   itens: ListItem[];
   shareId?: string;
+  isAssistidos?: boolean; // Indica se é a lista especial de assistidos
 }
 
 export type ShareableListData = Omit<Lista, "id"> & { originId: string }; 

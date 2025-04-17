@@ -21,9 +21,9 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
-import { generateShareId, getShareUrl } from "@/lib/utils";
+import { generateShareId, getShareUrl, adicionarItemNaListaAssistidos, removerItemDaListaAssistidos, LISTA_ASSISTIDOS_ID } from "@/lib/utils";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ExternalLink } from "lucide-react";
 
 interface ListaItemsProps {
   listaId: string;
@@ -36,6 +36,8 @@ export function ListaItems({ listaId }: ListaItemsProps) {
   const [editingItem, setEditingItem] = useState<ListItem | null>(null);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const [listasOrigens, setListasOrigens] = useState<Record<string, Lista>>({});
+  const isListaAssistidos = listaId === LISTA_ASSISTIDOS_ID;
 
   const form = useForm<Omit<ListItem, "id">>({
     defaultValues: {
@@ -53,6 +55,17 @@ export function ListaItems({ listaId }: ListaItemsProps) {
         const currentLista = listas.find((l) => l.id === listaId);
         if (currentLista) {
           setLista(currentLista);
+          
+          // Se for a lista de assistidos, carregar as listas de origem para exibir os nomes
+          if (isListaAssistidos) {
+            const origensMap: Record<string, Lista> = {};
+            listas.forEach(lista => {
+              if (!lista.isAssistidos) {
+                origensMap[lista.id] = lista;
+              }
+            });
+            setListasOrigens(origensMap);
+          }
         } else {
           // Lista não encontrada, voltar para a página inicial
           router.push("/");
@@ -64,7 +77,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
     };
 
     carregarLista();
-  }, [listaId, router]);
+  }, [listaId, router, isListaAssistidos]);
 
   const salvarLista = (novaLista: Lista) => {
     setLista(novaLista);
@@ -99,6 +112,16 @@ export function ListaItems({ listaId }: ListaItemsProps) {
     setDialogOpen(true);
   };
 
+  const getNomeOrigem = (origemId?: string) => {
+    if (!origemId) return "";
+    return listasOrigens[origemId]?.titulo || "Lista desconhecida";
+  };
+
+  const irParaListaOrigem = (origemId?: string) => {
+    if (!origemId) return;
+    router.push(`/lista/${origemId}`);
+  };
+
   const removerItem = (id: string) => {
     if (!lista) return;
     
@@ -107,20 +130,43 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       itens: lista.itens.filter((item) => item.id !== id),
     };
 
+    // Remover da lista
     salvarLista(novaLista);
+    
+    // Não há necessidade de sincronizar remoções, cada lista agora é independente
   };
 
   const toggleVisto = (id: string) => {
     if (!lista) return;
     
+    // Encontrar o item
+    const item = lista.itens.find(item => item.id === id);
+    if (!item) return;
+    
+    // Inverter o estado de visto
+    const novoEstadoVisto = !item.visto;
+    
     const novaLista = {
       ...lista,
       itens: lista.itens.map((item) =>
-        item.id === id ? { ...item, visto: !item.visto } : item
+        item.id === id ? { ...item, visto: novoEstadoVisto } : item
       ),
     };
 
+    // Salvar na lista atual
     salvarLista(novaLista);
+    
+    // Se não for a lista de assistidos e um item foi marcado como visto,
+    // adicionar à lista de assistidos (esta é a única sincronização)
+    if (!isListaAssistidos && novoEstadoVisto) {
+      adicionarItemNaListaAssistidos(
+        { ...item, visto: true }, 
+        lista.id
+      );
+    }
+    
+    // Não sincronizamos a remoção de itens da lista de assistidos quando o item é desmarcado
+    // na lista original. Isso torna a lista Assistidos independente.
   };
 
   const onSubmit = (data: Omit<ListItem, "id">) => {
@@ -215,7 +261,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
           <p className="text-gray-500">{lista.descricao}</p>
         </div>
         <div className="flex gap-2">
-          {lista.itens.length > 0 && (
+          {!isListaAssistidos && lista.itens.length > 0 && (
             <Button variant="outline" onClick={compartilharLista}>
               Compartilhar
             </Button>
@@ -242,6 +288,20 @@ export function ListaItems({ listaId }: ListaItemsProps) {
               />
               <div className={item.visto ? "line-through text-gray-500" : ""}>
                 {item.nome}
+                {isListaAssistidos && item.origemId && (
+                  <div className="text-xs mt-1 text-gray-500 flex items-center">
+                    <span>De: {getNomeOrigem(item.origemId)}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-5 w-5 ml-1"
+                      onClick={() => irParaListaOrigem(item.origemId)}
+                      title="Ir para a lista de origem"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
               <div>{item.verEm}</div>
               <Button
