@@ -52,6 +52,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       nome: "",
       verEm: "",
       tipo: "série",
+      observacao: "",
     },
   });
 
@@ -107,6 +108,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       nome: "",
       verEm: "",
       tipo: "série",
+      observacao: "",
     });
     setDialogOpen(true);
   };
@@ -118,6 +120,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       nome: item.nome,
       verEm: item.verEm,
       tipo: item.tipo,
+      observacao: item.observacao || "",
     });
     setDialogOpen(true);
   };
@@ -294,6 +297,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                   <th className="text-left p-4 font-semibold">Nome</th>
                   <th className="text-left p-4 font-semibold">Onde Assistir</th>
                   <th className="text-left p-4 font-semibold">Tipo</th>
+                  <th className="text-left p-4 font-semibold">Observação</th>
                   <th className="p-4 w-[80px]"></th>
                   <th className="p-4 w-[80px]"></th>
                 </tr>
@@ -327,6 +331,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                     </td>
                     <td className="p-4">{item.verEm}</td>
                     <td className="p-4">{item.tipo}</td>
+                    <td className="p-4">{item.observacao}</td>
                     <td className="p-4">
                       <Button
                         variant="outline"
@@ -412,6 +417,18 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                         <SelectItem value="anime">Anime</SelectItem>
                       </SelectContent>
                     </Select>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="observacao"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observação</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Observações (opcional)" {...field} />
+                    </FormControl>
                   </FormItem>
                 )}
               />
