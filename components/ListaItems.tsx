@@ -20,8 +20,15 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
-import { generateShareId, getShareUrl, adicionarItemNaListaAssistidos, removerItemDaListaAssistidos, LISTA_ASSISTIDOS_ID } from "@/lib/utils";
+import { generateShareId, getShareUrl, adicionarItemNaListaAssistidos, LISTA_ASSISTIDOS_ID } from "@/lib/utils";
 import { toast } from "sonner";
 import { Pencil, Trash2, ExternalLink } from "lucide-react";
 
@@ -44,6 +51,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       visto: false,
       nome: "",
       verEm: "",
+      tipo: "série",
     },
   });
 
@@ -98,6 +106,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       visto: false,
       nome: "",
       verEm: "",
+      tipo: "série",
     });
     setDialogOpen(true);
   };
@@ -108,6 +117,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       visto: item.visto,
       nome: item.nome,
       verEm: item.verEm,
+      tipo: item.tipo,
     });
     setDialogOpen(true);
   };
@@ -275,53 +285,73 @@ export function ListaItems({ listaId }: ListaItemsProps) {
           Nenhum item adicionado ainda
         </p>
       ) : (
-        <div className="border rounded-lg divide-y">
-          {lista.itens.map((item) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-[auto_1fr_1fr_auto_auto] gap-4 p-4 items-center"
-            >
-              <Checkbox
-                checked={item.visto}
-                onCheckedChange={() => toggleVisto(item.id)}
-                id={`visto-${item.id}`}
-              />
-              <div className={item.visto ? "line-through text-gray-500" : ""}>
-                {item.nome}
-                {isListaAssistidos && item.origemId && (
-                  <div className="text-xs mt-1 text-gray-500 flex items-center">
-                    <span>De: {getNomeOrigem(item.origemId)}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-5 w-5 ml-1"
-                      onClick={() => irParaListaOrigem(item.origemId)}
-                      title="Ir para a lista de origem"
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              <div>{item.verEm}</div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => editarItem(item)}
-                title="Alterar"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => removerItem(item.id)}
-                title="Remover"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          ))}
+        <div className="border rounded-lg overflow-hidden">
+          <div className="w-full overflow-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-secondary/20 border-b">
+                  <th className="text-left p-4 font-semibold">Visto</th>
+                  <th className="text-left p-4 font-semibold">Nome</th>
+                  <th className="text-left p-4 font-semibold">Onde Assistir</th>
+                  <th className="text-left p-4 font-semibold">Tipo</th>
+                  <th className="p-4 w-[80px]"></th>
+                  <th className="p-4 w-[80px]"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {lista.itens.map((item) => (
+                  <tr key={item.id} className="hover:bg-secondary/5">
+                    <td className="p-4">
+                      <Checkbox
+                        checked={item.visto}
+                        onCheckedChange={() => toggleVisto(item.id)}
+                        id={`visto-${item.id}`}
+                      />
+                    </td>
+                    <td className={`p-4 ${item.visto ? "line-through text-gray-500" : ""}`}>
+                      {item.nome}
+                      {isListaAssistidos && item.origemId && (
+                        <div className="text-xs mt-1 text-gray-500 flex items-center">
+                          <span>De: {getNomeOrigem(item.origemId)}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-5 w-5 ml-1"
+                            onClick={() => irParaListaOrigem(item.origemId)}
+                            title="Ir para a lista de origem"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-4">{item.verEm}</td>
+                    <td className="p-4">{item.tipo}</td>
+                    <td className="p-4">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => editarItem(item)}
+                        title="Alterar"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
+                    <td className="p-4">
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => removerItem(item.id)}
+                        title="Remover"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -354,10 +384,34 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                 name="verEm"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Ver em</FormLabel>
+                    <FormLabel>Onde Assistir</FormLabel>
                     <FormControl>
                       <Input placeholder="Onde ver" {...field} />
                     </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="tipo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tipo</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="série">Série</SelectItem>
+                        <SelectItem value="filme">Filme</SelectItem>
+                        <SelectItem value="anime">Anime</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </FormItem>
                 )}
               />

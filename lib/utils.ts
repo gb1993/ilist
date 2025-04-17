@@ -78,7 +78,6 @@ export function adicionarItemNaListaAssistidos(item: ListItem, listaOrigemId: st
   
   if (listaAssistidosIndex === -1) {
     // Criar lista de assistidos se não existir
-    const novaListaAssistidos = obterOuCriarListaAssistidos();
     adicionarItemNaListaAssistidos(item, listaOrigemId);
     return;
   }

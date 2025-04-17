@@ -3,6 +3,7 @@ export interface ListItem {
   visto: boolean;
   nome: string;
   verEm: string;
+  tipo: 'série' | 'filme' | 'anime'; // Tipo do conteúdo
   origemId?: string; // ID da lista de origem, para itens na lista de assistidos
 }
 
