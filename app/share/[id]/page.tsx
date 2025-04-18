@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Lista } from "@/lib/types";
 import { decodeShareData } from "@/lib/utils";
 import { toast } from "sonner";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function SharePage() {
   const params = useParams();
@@ -80,6 +81,9 @@ export default function SharePage() {
 
   return (
     <main className="container mx-auto py-8 px-4">
+      <div className="flex justify-end mb-4">
+        <ThemeToggle />
+      </div>
       <div className="max-w-lg mx-auto text-center space-y-6 border rounded-lg p-8 shadow-sm">
         <h1 className="text-2xl font-bold">
           {importStatus === "idle" && "Importando lista..."}
