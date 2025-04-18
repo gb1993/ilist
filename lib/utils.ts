@@ -11,12 +11,24 @@ export function generateShareId(): string {
 }
 
 export function encodeShareData(data: ShareableListData): string {
-  return encodeURIComponent(btoa(JSON.stringify(data)));
+  // Precisamos usar encodeURIComponent antes de btoa para lidar com caracteres Unicode
+  // A função btoa só funciona com strings ASCII
+  const jsonString = JSON.stringify(data);
+  // Converter para UTF-8, depois codificar em base64 de forma segura
+  return btoa(encodeURIComponent(jsonString).replace(/%([0-9A-F]{2})/g, (_, p1) => {
+    return String.fromCharCode(parseInt(p1, 16));
+  }));
 }
 
 export function decodeShareData(encoded: string): ShareableListData | null {
   try {
-    return JSON.parse(atob(decodeURIComponent(encoded)));
+    // Decodificar o base64 para UTF-8, depois para objeto JavaScript
+    const jsonString = decodeURIComponent(
+      Array.from(atob(encoded), c => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')
+    );
+    return JSON.parse(jsonString);
   } catch (e) {
     console.error("Erro ao decodificar dados compartilhados:", e);
     return null;
