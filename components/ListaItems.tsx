@@ -218,10 +218,28 @@ export function ListaItems({ listaId }: ListaItemsProps) {
   const compartilharLista = () => {
     if (!lista) return;
 
+    // Garantir que todos os itens tenham os campos obrigatórios (para itens antigos)
+    const itensValidados = lista.itens.map(item => ({
+      ...item,
+      tipo: item.tipo || 'série', // Valor padrão para itens sem tipo
+      observacao: item.observacao || '' // Valor padrão vazio para observação
+    }));
+
+    // Atualizar a lista com os itens validados, se necessário
+    if (JSON.stringify(lista.itens) !== JSON.stringify(itensValidados)) {
+      const listaAtualizada = {
+        ...lista,
+        itens: itensValidados
+      };
+      salvarLista(listaAtualizada);
+      setLista(listaAtualizada);
+    }
+
     // Se ainda não tiver um shareId, gerar um
     if (!lista.shareId) {
       const novaLista = {
         ...lista,
+        itens: itensValidados, // Usar itens validados
         shareId: generateShareId()
       };
       salvarLista(novaLista);
@@ -231,8 +249,12 @@ export function ListaItems({ listaId }: ListaItemsProps) {
       const url = getShareUrl(novaLista);
       setShareUrl(url);
     } else {
-      // Usar o shareId existente
-      const url = getShareUrl(lista);
+      // Usar o shareId existente, mas garantir que use os itens validados
+      const novaLista = {
+        ...lista,
+        itens: itensValidados
+      };
+      const url = getShareUrl(novaLista);
       setShareUrl(url);
     }
     

@@ -26,10 +26,21 @@ export function decodeShareData(encoded: string): ShareableListData | null {
 export function getShareUrl(lista: Lista): string {
   if (!lista.shareId) return "";
   
+  // Garantir que todos os itens tenham os campos necessários
+  const itensCompletos = lista.itens.map(item => ({
+    id: item.id,
+    nome: item.nome,
+    verEm: item.verEm,
+    visto: item.visto,
+    tipo: item.tipo || 'série', // Valor padrão para tipo
+    observacao: item.observacao || '', // Valor padrão para observação
+    origemId: item.origemId
+  }));
+  
   const shareData: ShareableListData = {
     titulo: lista.titulo,
     descricao: lista.descricao,
-    itens: lista.itens,
+    itens: itensCompletos, // Usar itens com todos os campos
     originId: lista.id
   };
   
