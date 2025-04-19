@@ -159,27 +159,45 @@ export function ListaItems({ listaId }: ListaItemsProps) {
     // Inverter o estado de visto
     const novoEstadoVisto = !item.visto;
     
-    const novaLista = {
-      ...lista,
-      itens: lista.itens.map((item) =>
-        item.id === id ? { ...item, visto: novoEstadoVisto } : item
-      ),
-    };
-
-    // Salvar na lista atual
-    salvarLista(novaLista);
+    // Se for a lista de assistidos, apenas atualizar o status de visto
+    if (isListaAssistidos) {
+      const novaLista = {
+        ...lista,
+        itens: lista.itens.map((item) =>
+          item.id === id ? { ...item, visto: novoEstadoVisto } : item
+        ),
+      };
+      salvarLista(novaLista);
+      return;
+    }
     
-    // Se não for a lista de assistidos e um item foi marcado como visto,
-    // adicionar à lista de assistidos (esta é a única sincronização)
-    if (!isListaAssistidos && novoEstadoVisto) {
+    // Se não for a lista de assistidos e o item foi marcado como visto:
+    if (novoEstadoVisto) {
+      // 1. Adicionar à lista de assistidos
       adicionarItemNaListaAssistidos(
         { ...item, visto: true }, 
         lista.id
       );
+      
+      // 2. Remover da lista original
+      const novaLista = {
+        ...lista,
+        itens: lista.itens.filter((i) => i.id !== id),
+      };
+      salvarLista(novaLista);
+      
+      // Mostrar toast para informar ao usuário
+      toast.success("Item movido para a lista Assistidos");
+    } else {
+      // Se estiver desmarcando o item, apenas atualizar o status
+      const novaLista = {
+        ...lista,
+        itens: lista.itens.map((item) =>
+          item.id === id ? { ...item, visto: false } : item
+        ),
+      };
+      salvarLista(novaLista);
     }
-    
-    // Não sincronizamos a remoção de itens da lista de assistidos quando o item é desmarcado
-    // na lista original. Isso torna a lista Assistidos independente.
   };
 
   const onSubmit = (data: Omit<ListItem, "id">) => {
