@@ -28,9 +28,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
-import { generateShareId, getShareUrl, adicionarItemNaListaAssistidos, LISTA_ASSISTIDOS_ID } from "@/lib/utils";
+import { 
+  generateShareId, 
+  getShareUrl, 
+  adicionarItemNaListaAssistidos, 
+  LISTA_ASSISTIDOS_ID,
+  obterListasDisponiveis,
+  moverItemParaLista
+} from "@/lib/utils";
 import { toast } from "sonner";
-import { Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Pencil, Trash2, ExternalLink, MoveRight } from "lucide-react";
 
 interface ListaItemsProps {
   listaId: string;
@@ -44,6 +51,10 @@ export function ListaItems({ listaId }: ListaItemsProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [listasOrigens, setListasOrigens] = useState<Record<string, Lista>>({});
+  const [listasDisponiveis, setListasDisponiveis] = useState<Lista[]>([]);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [itemParaMover, setItemParaMover] = useState<string | null>(null);
+  const [listaDestinoId, setListaDestinoId] = useState<string>("");
   const isListaAssistidos = listaId === LISTA_ASSISTIDOS_ID;
 
   const form = useForm<Omit<ListItem, "id">>({
@@ -64,6 +75,9 @@ export function ListaItems({ listaId }: ListaItemsProps) {
         const currentLista = listas.find((l) => l.id === listaId);
         if (currentLista) {
           setLista(currentLista);
+          
+          // Carregar listas disponíveis para mover itens
+          setListasDisponiveis(obterListasDisponiveis(listaId));
           
           // Se for a lista de assistidos, carregar as listas de origem para exibir os nomes
           if (isListaAssistidos) {
@@ -289,6 +303,43 @@ export function ListaItems({ listaId }: ListaItemsProps) {
     }
   };
 
+  const abrirDialogoMover = (id: string) => {
+    setItemParaMover(id);
+    setListaDestinoId("");
+    setMoveDialogOpen(true);
+  };
+
+  const moverItem = () => {
+    if (!itemParaMover || !listaDestinoId || !lista) return;
+    
+    const sucesso = moverItemParaLista(itemParaMover, listaId, listaDestinoId);
+    
+    if (sucesso) {
+      // Atualizar a lista atual removendo o item
+      const novaLista = {
+        ...lista,
+        itens: lista.itens.filter((item) => item.id !== itemParaMover),
+      };
+      
+      setLista(novaLista);
+      
+      // Encontrar o nome da lista de destino para o toast
+      const listaDestino = listasDisponiveis.find(l => l.id === listaDestinoId);
+      
+      toast.success(
+        `Item movido para ${listaDestino ? listaDestino.titulo : 'outra lista'}`
+      );
+      
+      setMoveDialogOpen(false);
+      setItemParaMover(null);
+      
+      // Atualizar a lista de listas disponíveis
+      setListasDisponiveis(obterListasDisponiveis(listaId));
+    } else {
+      toast.error("Não foi possível mover o item");
+    }
+  };
+
   if (!lista) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -340,6 +391,7 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                   <th className="text-left p-4 font-semibold">Observação</th>
                   <th className="p-4 w-[80px]"></th>
                   <th className="p-4 w-[80px]"></th>
+                  <th className="p-4 w-[80px]"></th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -380,6 +432,16 @@ export function ListaItems({ listaId }: ListaItemsProps) {
                         title="Alterar"
                       >
                         <Pencil className="h-4 w-4" />
+                      </Button>
+                    </td>
+                    <td className="p-4">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => abrirDialogoMover(item.id)}
+                        title="Mover para outra lista"
+                      >
+                        <MoveRight className="h-4 w-4" />
                       </Button>
                     </td>
                     <td className="p-4">
@@ -514,6 +576,55 @@ export function ListaItems({ listaId }: ListaItemsProps) {
               Quando alguém abrir este link, a lista será criada automaticamente para eles.
             </p>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mover Item para Outra Lista</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <p className="text-sm text-gray-500">
+              Selecione a lista para onde deseja mover este item:
+            </p>
+            {listasDisponiveis.length === 0 ? (
+              <p className="text-sm text-amber-500">
+                Não há outras listas disponíveis. Crie uma nova lista primeiro.
+              </p>
+            ) : (
+              <Select 
+                value={listaDestinoId} 
+                onValueChange={setListaDestinoId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma lista" />
+                </SelectTrigger>
+                <SelectContent>
+                  {listasDisponiveis.map((lista) => (
+                    <SelectItem key={lista.id} value={lista.id}>
+                      {lista.titulo}
+                      {lista.isAssistidos && " (Assistidos)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setMoveDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={moverItem}
+              disabled={!listaDestinoId || listasDisponiveis.length === 0}
+            >
+              Mover
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

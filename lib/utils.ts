@@ -180,3 +180,55 @@ export function listaAssistidosDeveSerVisivel(): boolean {
   
   return !!listaAssistidos && listaAssistidos.itens.length > 0;
 }
+
+// Obter todas as listas disponíveis (exceto a lista atual)
+export function obterListasDisponiveis(listaAtualId: string): Lista[] {
+  const savedListas = localStorage.getItem("listas");
+  if (!savedListas) return [];
+  
+  const listas = JSON.parse(savedListas) as Lista[];
+  return listas.filter(lista => lista.id !== listaAtualId);
+}
+
+// Mover um item para outra lista
+export function moverItemParaLista(
+  itemId: string, 
+  listaOrigemId: string, 
+  listaDestinoId: string
+): boolean {
+  const savedListas = localStorage.getItem("listas");
+  if (!savedListas) return false;
+  
+  const listas = JSON.parse(savedListas) as Lista[];
+  
+  // Encontrar as listas de origem e destino
+  const listaOrigemIndex = listas.findIndex(lista => lista.id === listaOrigemId);
+  const listaDestinoIndex = listas.findIndex(lista => lista.id === listaDestinoId);
+  
+  if (listaOrigemIndex === -1 || listaDestinoIndex === -1) return false;
+  
+  // Encontrar o item na lista de origem
+  const itemIndex = listas[listaOrigemIndex].itens.findIndex(item => item.id === itemId);
+  if (itemIndex === -1) return false;
+  
+  // Copiar o item para a lista de destino
+  const item = listas[listaOrigemIndex].itens[itemIndex];
+  const itemParaAdicionar = { ...item };
+  
+  // Se a lista de destino for a lista de assistidos, adicionar a informação de origem
+  if (listas[listaDestinoIndex].isAssistidos) {
+    itemParaAdicionar.origemId = listaOrigemId;
+  }
+  
+  // Adicionar à lista de destino
+  listas[listaDestinoIndex].itens.push(itemParaAdicionar);
+  
+  // Remover da lista de origem
+  listas[listaOrigemIndex].itens = listas[listaOrigemIndex].itens.filter(
+    item => item.id !== itemId
+  );
+  
+  // Salvar as alterações
+  localStorage.setItem("listas", JSON.stringify(listas));
+  return true;
+}
