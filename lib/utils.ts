@@ -101,7 +101,19 @@ export function adicionarItemNaListaAssistidos(item: ListItem, listaOrigemId: st
   
   if (listaAssistidosIndex === -1) {
     // Criar lista de assistidos se não existir
-    adicionarItemNaListaAssistidos(item, listaOrigemId);
+    const listaAssistidos = {
+      id: LISTA_ASSISTIDOS_ID,
+      titulo: "Assistidos",
+      descricao: "Itens marcados como vistos",
+      itens: [{
+        ...item,
+        origemId: listaOrigemId
+      }],
+      isAssistidos: true
+    };
+    
+    listas.push(listaAssistidos);
+    localStorage.setItem("listas", JSON.stringify(listas));
     return;
   }
   
